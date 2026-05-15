@@ -29,7 +29,7 @@ jobs:
             git pull origin main
             
             # Install any new dependencies
-            npm install
+            # npm install
             
             # Inject the latest Secrets into .env (In case they changed)
             # echo "NODE_ENV=production" >> .env
