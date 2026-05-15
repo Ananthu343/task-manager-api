@@ -30,6 +30,7 @@ io.on('connection', (socket) => {
     // Listen for progress updates from external worker services
     socket.on('download_progress', async (data) => {
         // data expects: { reportId, tenantId, progress }
+        console.log("getting download progress....", data)
         if (data.tenantId && data.reportId) {
             // Broadcast to the specific tenant's frontend clients
             io.to(`tenant_${data.tenantId}`).emit('download_progress', data);
@@ -46,6 +47,7 @@ io.on('connection', (socket) => {
 
     // Listen for completion from external worker services
     socket.on('report_completed', async (data) => {
+        console.log("download completed....", data)
         // data expects: { reportId, tenantId, link }
         if (data.tenantId && data.reportId) {
             // Broadcast the completion to frontend clients
