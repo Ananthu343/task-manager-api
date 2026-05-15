@@ -16,7 +16,40 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /var/www/backend
-            git pull origin main
+            # 1. Ensure the parent directory exists and is writable
+            sudo mkdir -p /var/www
+            sudo chown -R $USER:$USER /var/www
+
+            # 2. Check if the repo is already cloned
+            if [ ! -d "/var/www/backend/.git" ]; then
+              echo "First time deployment: Cloning repository..."
+              # Replace with your actual repo URL. 
+              # Using a Personal Access Token (PAT) or SSH key is best for private repos.
+              git clone https://github.com/your-username/your-repo-name.git /var/www/backend
+              cd /var/www/backend/backend
+            else
+              echo "Subsequent deployment: Pulling latest changes..."
+              cd /var/www/backend/backend
+              git pull origin main
+            fi
+
+            # 3. Install dependencies
             npm install
-            pm2 restart all
+
+            # 4. Handle Environment Variables 
+            # We write them to a .env file so PM2 can load them reliably
+            # Add other secrets here...
+
+            # 5. Smart PM2 Restart
+            # Check if the process is already running by name
+            pm2 describe backend-api > /dev/null
+            if [ $? -eq 0 ]; then
+              echo "Restarting existing process..."
+              pm2 restart backend-api --update-env
+            else
+              echo "Starting new process..."
+              pm2 start index.js --name "backend-api"
+            fi
+
+            # 6. Save PM2 state so it starts on server reboot
+            pm2 save
