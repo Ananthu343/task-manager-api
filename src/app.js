@@ -13,8 +13,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: ['https://task-manager.in', 'http://task-manager.in'],
-        credentials: true
+        origin: '*'
     }
 });
 
