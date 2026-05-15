@@ -13,7 +13,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*', // Adjust this based on your frontend URL in production
+        origin: ['https://task-manager.in', 'http://task-manager.in'],
+        credentials: true
     }
 });
 
@@ -60,7 +61,10 @@ io.on('connection', (socket) => {
 
 app.set('io', io);
 
-app.use(cors());
+app.use(cors({
+    origin: ['https://task-manager.in', 'http://task-manager.in'],
+    credentials: true
+}));
 app.use(express.json())
 
 app.get('/health', (req,res) => {
