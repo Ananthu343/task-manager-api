@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 # Updated to v4
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@master
@@ -20,20 +20,32 @@ jobs:
           username: ${{ secrets.REMOTE_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Check if directory exists
-            if [ ! -d "/var/www/backend" ]; then
-              sudo mkdir -p /var/www/backend
-              sudo chown -R ubuntu:ubuntu /var/www/backend
+            set -e # Exit immediately if a command fails
+            
+            # Ensure workspace exists
+            sudo mkdir -p /var/www
+            sudo chown -R ubuntu:ubuntu /var/www
+
+            # Check if repo exists, if not clone it
+            if [ ! -d "/var/www/backend/.git" ]; then
+              echo "First time deploy: Cloning..."
               git clone https://github.com/${{ github.repository }}.git /var/www/backend
             fi
             
             cd /var/www/backend/backend
-            git pull origin main
-            npm install
             
-            # Create/Update .env file
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+            echo "Pulling latest changes..."
+            git fetch origin main
+            git reset --hard origin/main
             
-            # Smart restart with PM2
+            echo "Installing dependencies..."
+            npm install --production
+            
+            echo "Setting up environment..."
+            # echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
+            # echo "NODE_ENV=production" >> .env
+            
+            echo "Restarting Server..."
+            # This tries to restart; if it fails (first time), it starts it
             pm2 restart backend-api --update-env || pm2 start index.js --name "backend-api"
             pm2 save
