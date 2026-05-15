@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const { errorMiddleware } = require('./middleware/errorMiddleware');
 require('dotenv').config()
 const approutes = require('../src/routes')
+const db = require('./config/db');
 
 const app = express();
 
@@ -25,6 +26,32 @@ io.on('connection', (socket) => {
         console.log(`Socket ${socket.id} joined room ${roomName}`);
     });
 
+    // Listen for progress updates from external worker services
+    socket.on('download_progress', async (data) => {
+        // data expects: { reportId, tenantId, progress }
+        if (data.tenantId && data.reportId) {
+            // Broadcast to the specific tenant's frontend clients
+            io.to(`tenant_${data.tenantId}`).emit('download_progress', data);
+            
+            // Persist the progress in the database
+            try {
+                const query = `UPDATE report_history SET progress = $1, status = 'processing' WHERE id = $2 AND tenant_id = $3`;
+                await db.query(query, [data.progress, data.reportId, data.tenantId]);
+            } catch (err) {
+                console.error('Failed to update report progress:', err.message);
+            }
+        }
+    });
+
+    // Listen for completion from external worker services
+    socket.on('report_completed', async (data) => {
+        // data expects: { reportId, tenantId, link }
+        if (data.tenantId && data.reportId) {
+            // Broadcast the completion to frontend clients
+            io.to(`tenant_${data.tenantId}`).emit('report_completed', data);        
+        }
+    });
+
     socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
     });
@@ -43,6 +70,18 @@ app.use('/api/v1', approutes)
 
 app.use(errorMiddleware)
 
-server.listen(process.env.PORT, () => {
-    console.log("Server is running on", process.env.PORT)
-})
+const PORT = process.env.PORT || 5000;
+
+db.connectDB().then(() => {
+    server.listen(PORT, '0.0.0.0', () => { // Adding '0.0.0.0' is crucial for Docker/Render
+        console.log(`🚀 Server running on port ${PORT}`);
+    });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    pool.end();
+    console.log('HTTP server closed');
+  });
+});

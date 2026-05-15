@@ -8,6 +8,7 @@ const tenantController = require('../controllers/tenantController');
 const workspaceController = require('../controllers/workspaceController');
 const settingsController = require('../controllers/settingsController');
 const webhookController = require('../controllers/webhookController');
+const reportRoutes = require('./reportRoutes');
 const { protect } = require('../middleware/jwtMiddleware');
 
 // Public Routes
@@ -26,5 +27,8 @@ router.patch('/settings', protect, settingsController.updateSettings);
 router.get('/webhooks', protect, webhookController.getWebhooks);
 router.post('/webhooks', protect, webhookController.createWebhook);
 router.delete('/webhooks/:id', protect, webhookController.deleteWebhook);
+
+// Report Routes
+router.use('/reports', protect, reportRoutes);
 
 module.exports = router;

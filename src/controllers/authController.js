@@ -39,7 +39,7 @@ const login = async (req, res, next) => {
       expiresIn: '1d',
     });
 
-    res.status(200).json({ status: 'success', token });
+    res.status(200).json({ status: 'success', token, tenantId: user.tenant_id });
   } catch (error) {
     next(error);
   }

@@ -63,3 +63,16 @@ CREATE TABLE IF NOT EXISTS webhooks (
     event VARCHAR(100) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create Report History table for Async Export Module
+CREATE TABLE IF NOT EXISTS report_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+    dummy_count INT DEFAULT 0,
+    status VARCHAR(50) NOT NULL DEFAULT 'pending', -- 'pending', 'processing', 'completed', 'failed'
+    link TEXT, -- This will store the S3 URL once the Lambda finishes
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Index for faster retrieval of history per tenant
+CREATE INDEX idx_report_history_tenant ON report_history(tenant_id);
