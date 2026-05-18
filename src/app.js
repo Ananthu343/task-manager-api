@@ -12,8 +12,11 @@ const app = express();
 const server = http.createServer(app);
 
 const SOCKET_SERVER_URL = process.env.SOCKET_SERVER_URL || 'http://localhost:4000';
+console.log(SOCKET_SERVER_URL);
+
 
 const socketClient = SocketIOClient(SOCKET_SERVER_URL, {
+    path: '/socket',
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 2000,
