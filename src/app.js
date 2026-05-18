@@ -38,7 +38,7 @@ socketClient.on('connect_error', (err) => {
 app.set('io', socketClient);
 
 app.use(cors({
-    origin: ['https://task-manager.in', 'http://task-manager.in'],
+    origin: ['https://task-manager.in', 'http://task-manager.in', 'http://localhost:3000'],
     credentials: true
 }));
 app.use(express.json());

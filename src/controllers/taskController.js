@@ -1,4 +1,5 @@
 const taskModel = require('../models/taskModel');
+const { triggerTenantWebhooks } = require('../services/webhookService');
 
 const mapPriorityToInt = (priority) => {
     if (typeof priority === 'number') return priority;
@@ -35,10 +36,11 @@ const createTask = async (req, res, next) => {
             status
         });
 
-        const io = req.app.get('io');
-        if (io) {
-            io.to(`tenant_${req.user.tenant_id}`).emit('task_created', newTask);
-        }
+
+        void triggerTenantWebhooks(req.user.tenant_id, 'task_created', {
+            event: 'task_created',
+            task: newTask,
+        });
 
         res.status(201).json({ status: 'success', data: { task: newTask } });
     } catch (error) {
@@ -73,11 +75,12 @@ const updateTask = async (req, res, next) => {
             err.status = 404;
             throw err;
         }
+       
 
-        const io = req.app.get('io');
-        if (io) {
-            io.to(`tenant_${req.user.tenant_id}`).emit('task_updated', updatedTask);
-        }
+        void triggerTenantWebhooks(req.user.tenant_id, 'task_updated', {
+            event: 'task_updated',
+            task: updatedTask,
+        });
 
         res.status(200).json({ status: 'success', data: { task: updatedTask } });
     } catch (error) {
@@ -94,10 +97,10 @@ const deleteTask = async (req, res, next) => {
             throw err;
         }
 
-        const io = req.app.get('io');
-        if (io) {
-            io.to(`tenant_${req.user.tenant_id}`).emit('task_deleted', { id: req.params.id });
-        }
+        void triggerTenantWebhooks(req.user.tenant_id, 'task_deleted', {
+            event: 'task_deleted',
+            task: { id: req.params.id },
+        });
 
         res.status(204).json({ status: 'success', data: null });
     } catch (error) {
